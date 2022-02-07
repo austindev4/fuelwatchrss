@@ -30,7 +30,7 @@ Post build steps:-
 1. Add secret for sqladmin to vault 
 2. Obtain and add secret dataLakeStorageAccountKey from storage account to vault.
 2. Add access policy (with secret get+list) in key vault for data factory principal id.
-3. Create schemas for datamart using sql_artifacts.txt
+3. Create schemas for datamart using the [sql artifacts file](https://github.com/austindev4/fuelwatchrss/blob/main/SQL%20Artefacts.txt).
 
 ## Final state
 Trigger the e2e pipeline on ADF. Flow is RSS->Blob->SQL.
