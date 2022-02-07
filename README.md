@@ -24,7 +24,7 @@ Pass below parameters during datafactory flows ARM deployment.
 ## Pending
 Some tasks pending automation as below:-
 Pre build:-
-1. Create resource group with any name.
+1. Create resource group in Australia East region.
 
 Post build steps:-
 1. Add secret for sqladmin to vault 
