@@ -9,12 +9,6 @@
         }
     },
     "parameters": {
-        "storageAccountName": {
-            "type": "string",
-            "metadata": {
-                "description": "Specifies the name of the Azure Storage account."
-            }
-        },
         "containerName": {
             "type": "string",
             "defaultValue": "datalakestore",
@@ -31,6 +25,7 @@
         },
         "datamartserverAdminLogin": {
             "type": "string",
+            "defaultValue": "sqladmin",
             "minLength": 1
         },
         "datamartserverAdminLoginPassword": {
@@ -42,13 +37,26 @@
             "metadata": {
                 "description": "The name of the SQL Database."
             }
+        },
+        "tenant": {
+            "type": "string",
+            "defaultValue": "[subscription().tenantId]"
+        },
+        "networkAcls": {
+            "type": "object",
+            "defaultValue": {
+                "defaultAction": "allow",
+                "bypass": "AzureServices",
+                "ipRules": [],
+                "virtualNetworkRules": []
+            }
         }
     },
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
             "apiVersion": "2021-06-01",
-            "name": "[parameters('storageAccountName')]",
+            "name": "[variables('datastorename')]",
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
@@ -66,13 +74,13 @@
         {
             "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
             "apiVersion": "2021-06-01",
-            "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+            "name": "[format('{0}/default/{1}', variables('datastorename'), parameters('containerName'))]",
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
             },
             "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('datastorename'))]"
             ]
         },
         {
@@ -130,9 +138,93 @@
                 "requestedBackupStorageRedundancy": "Geo",
                 "isLedgerOn": false
             }
+        },
+        {
+            "name": "[variables('keyvaultname')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "properties": {
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": true,
+                "enabledForDiskEncryption": true,
+                "networkAcls": "[parameters('networkAcls')]",
+                "tenantId": "[parameters('tenant')]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[parameters('tenant')]",
+                        "objectId": "1b244ee9-35c5-46a8-b54b-9defef1c9dff",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List",
+                                "Set",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "List",
+                                "Update",
+                                "Create",
+                                "Import",
+                                "Delete",
+                                "Recover",
+                                "Backup",
+                                "Restore",
+                                "ManageContacts",
+                                "ManageIssuers",
+                                "GetIssuers",
+                                "ListIssuers",
+                                "SetIssuers",
+                                "DeleteIssuers"
+                            ]
+                        }
+                    }
+                ],
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                }
+            }
+        },
+        {
+            "name": "[variables('datafactoryname')]",
+            "type": "Microsoft.DataFactory/factories",
+            "apiVersion": "2018-06-01",
+            "properties": {},
+            "dependsOn": [],
+            "location": "australiaeast",
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
         }
     ],
     "variables": {
-        "datamartserverName": "[concat('datamartserver', uniqueString(resourceGroup().id))]"
+        "datamartserverName": "[concat('datamartserver', uniqueString(resourceGroup().id))]",
+        "keyvaultname": "[concat('vault', uniqueString(resourceGroup().id))]",
+        "datastorename": "[concat('datastore', uniqueString(resourceGroup().id))]",
+        "datafactoryname": "[concat('factory', uniqueString(resourceGroup().id))]"
     }
 }

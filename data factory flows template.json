@@ -1,0 +1,1064 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "datalakestore_connectionString": {
+            "type": "secureString",
+            "metadata": "Secure string for 'connectionString' of 'datalakestore'",
+            "defaultValue": ""  
+        },
+        "DataMart_connectionString": {
+            "type": "secureString",
+            "metadata": "Secure string for 'connectionString' of 'DataMart'",
+            "defaultValue": ""
+        },
+        "FuelWatchRSSHttpServer_properties_typeProperties_url": {
+            "type": "string",
+            "defaultValue": "http://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS"
+        }
+    },
+    "variables": {
+        "factoryId": "[concat('Microsoft.DataFactory/factories/', variables('dataFactoryName'))]",
+        "datafactoryname": "[concat('factory', uniqueString(resourceGroup().id))]",
+        "keyvaultname": "[concat('vault', uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "name": "[concat(variables('dataFactoryName'), '/copy rss to json blob')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "Copy to blob",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "XmlSource",
+                                "storeSettings": {
+                                    "type": "HttpReadSettings",
+                                    "requestMethod": "GET"
+                                },
+                                "formatSettings": {
+                                    "type": "XmlReadSettings",
+                                    "validationMode": "none",
+                                    "namespaces": true
+                                }
+                            },
+                            "sink": {
+                                "type": "JsonSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageWriteSettings",
+                                    "copyBehavior": "PreserveHierarchy"
+                                },
+                                "formatSettings": {
+                                    "type": "JsonWriteSettings"
+                                }
+                            },
+                            "enableStaging": false
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "FuelWatchRSSHttpServer",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "Json1",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {},
+                    "cancelAfter": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2022-02-05T02:00:05Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/FuelWatchRSSHttpServer')]",
+                "[concat(variables('factoryId'), '/datasets/Json1')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/e2e w json')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "Copy to blob",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "XmlSource",
+                                "storeSettings": {
+                                    "type": "HttpReadSettings",
+                                    "requestMethod": "GET"
+                                },
+                                "formatSettings": {
+                                    "type": "XmlReadSettings",
+                                    "validationMode": "none",
+                                    "namespaces": true
+                                }
+                            },
+                            "sink": {
+                                "type": "JsonSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageWriteSettings",
+                                    "copyBehavior": "PreserveHierarchy"
+                                },
+                                "formatSettings": {
+                                    "type": "JsonWriteSettings"
+                                }
+                            },
+                            "enableStaging": false
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "FuelWatchRSSHttpServer",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "Json1",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    },
+                    {
+                        "name": "copy to DataMart",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Copy to blob",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "dataflow rss to json",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "jsonblob": {},
+                                    "sink1": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate dimension tables Brand and Site",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "copy to DataMart",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Dimension tables Brand and Site",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "tempstage": {},
+                                    "BrandTableSink": {},
+                                    "SiteTableSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate dimension tables SiteFeatures",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Populate dimension tables Brand and Site",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Dimension table SiteFeatures",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "tempstage": {},
+                                    "DataMartSite": {},
+                                    "SiteFeaturesSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate fact table",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Populate dimension tables SiteFeatures",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Fact table FuelPrice",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "Site": {},
+                                    "tempstage": {},
+                                    "Brand": {},
+                                    "FuelPriceSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {},
+                    "cancelAfter": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2022-02-06T05:43:57Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/FuelWatchRSSHttpServer')]",
+                "[concat(variables('factoryId'), '/datasets/Json1')]",
+                "[concat(variables('factoryId'), '/dataflows/dataflow rss to json')]",
+                "[concat(variables('factoryId'), '/dataflows/Dimension tables Brand and Site')]",
+                "[concat(variables('factoryId'), '/dataflows/Dimension table SiteFeatures')]",
+                "[concat(variables('factoryId'), '/dataflows/Fact table FuelPrice')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/testfacttable')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "testfacttable",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Fact table FuelPrice",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "Site": {},
+                                    "tempstage": {},
+                                    "Brand": {},
+                                    "FuelPriceSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {},
+                    "cancelAfter": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2022-02-06T05:43:57Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/dataflows/Fact table FuelPrice')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/Json1')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "datalakestore",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "fileName": "feed.json",
+                        "folderPath": "/Raw/FuelWatch/",
+                        "container": "datalakestore"
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/datalakestore')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/FuelWatchRSSHttpServer')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "FuelWatchRSSHttpServer",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "Xml",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/FuelWatchRSSHttpServer')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "address",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "brand",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "date",
+                        "type": "date"
+                    },
+                    {
+                        "name": "description",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "latitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "location",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "longitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "phone",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "price",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "site-features",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "title",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "trading-name",
+                        "type": "nvarchar"
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "tempstage",
+                    "table": "FuelPrices"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart_tempstage')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "address",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "brand",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "date",
+                        "type": "date"
+                    },
+                    {
+                        "name": "description",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "latitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "location",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "longitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "phone",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "price",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "site-features",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "title",
+                        "type": "nvarchar"
+                    },
+                    {
+                        "name": "trading-name",
+                        "type": "nvarchar"
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "tempstage",
+                    "table": "FuelPrices"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart_dwBrand')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "BrandID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "BrandName",
+                        "type": "varchar"
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "dw",
+                    "table": "Brand"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart_Site')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "SiteID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "TradingName",
+                        "type": "varchar"
+                    },
+                    {
+                        "name": "Location",
+                        "type": "varchar"
+                    },
+                    {
+                        "name": "Address",
+                        "type": "varchar"
+                    },
+                    {
+                        "name": "Phone",
+                        "type": "varchar"
+                    },
+                    {
+                        "name": "Latitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "Longitude",
+                        "type": "float",
+                        "precision": 15
+                    },
+                    {
+                        "name": "FullAddress",
+                        "type": "varchar"
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "dw",
+                    "table": "Site"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart_SiteFeatures')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "SiteFeatureID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "SiteFeatures",
+                        "type": "varchar"
+                    },
+                    {
+                        "name": "SiteID",
+                        "type": "int",
+                        "precision": 10
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "dw",
+                    "table": "SiteFeatures"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart_FuelPrice')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "DataMart",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "AzureSqlTable",
+                "schema": [
+                    {
+                        "name": "FuelPriceID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "BrandID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "SiteID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "DateID",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "Price",
+                        "type": "int",
+                        "precision": 10
+                    },
+                    {
+                        "name": "DateCreated",
+                        "type": "datetime",
+                        "precision": 23,
+                        "scale": 3
+                    },
+                    {
+                        "name": "DateModified",
+                        "type": "datetime",
+                        "precision": 23,
+                        "scale": 3
+                    }
+                ],
+                "typeProperties": {
+                    "schema": "dw",
+                    "table": "FuelPrice"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/dataflow1 json')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "Json1",
+                                "type": "DatasetReference"
+                            },
+                            "name": "jsonblob"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "sink1"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "Flatten1"
+                        }
+                    ],
+                    "script": "source(output(\n\t\trss as ({@version} as double, channel as (copyright as string, description as string, image as (link as string, title as string, url as string), item as (address as string, brand as string, date as date, description as string, latitude as double, location as string, longitude as double, phone as string, price as double, {site-features} as string, title as string, {trading-name} as string)[], language as string, lastBuildDate as string, link as string, title as string, ttl as short))\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> jsonblob\njsonblob foldDown(unroll(rss.channel.item),\n\tmapColumn(\n\t\taddress = rss.channel.item.address,\n\t\tbrand = rss.channel.item.brand,\n\t\tdate = rss.channel.item.date,\n\t\tdescription = rss.channel.item.description,\n\t\tlatitude = rss.channel.item.latitude,\n\t\tlocation = rss.channel.item.location,\n\t\tlongitude = rss.channel.item.longitude,\n\t\tphone = rss.channel.item.phone,\n\t\tprice = rss.channel.item.price,\n\t\t{site-features} = rss.channel.item.{site-features},\n\t\ttitle = rss.channel.item.title,\n\t\t{trading-name} = rss.channel.item.{trading-name}\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> Flatten1\nFlatten1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> sink1"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/Json1')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/dataflow rss to json')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "Json1",
+                                "type": "DatasetReference"
+                            },
+                            "name": "jsonblob"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "sink1"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "Flatten1"
+                        }
+                    ],
+                    "script": "source(output(\n\t\trss as ({@version} as double, channel as (copyright as string, description as string, image as (link as string, title as string, url as string), item as (address as string, brand as string, date as date, description as string, latitude as double, location as string, longitude as double, phone as string, price as double, {site-features} as string, title as string, {trading-name} as string)[], language as string, lastBuildDate as string, link as string, title as string, ttl as short))\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tdocumentForm: 'documentPerLine') ~> jsonblob\njsonblob foldDown(unroll(rss.channel.item),\n\tmapColumn(\n\t\taddress = rss.channel.item.address,\n\t\tbrand = rss.channel.item.brand,\n\t\tdate = rss.channel.item.date,\n\t\tdescription = rss.channel.item.description,\n\t\tlatitude = rss.channel.item.latitude,\n\t\tlocation = rss.channel.item.location,\n\t\tlongitude = rss.channel.item.longitude,\n\t\tphone = rss.channel.item.phone,\n\t\tprice = rss.channel.item.price,\n\t\t{site-features} = rss.channel.item.{site-features},\n\t\ttitle = rss.channel.item.title,\n\t\t{trading-name} = rss.channel.item.{trading-name}\n\t),\n\tskipDuplicateMapInputs: false,\n\tskipDuplicateMapOutputs: false) ~> Flatten1\nFlatten1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> sink1"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/Json1')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/Dimension table SiteFeatures')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "tempstage"
+                        },
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_Site",
+                                "type": "DatasetReference"
+                            },
+                            "name": "DataMartSite"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_SiteFeatures",
+                                "type": "DatasetReference"
+                            },
+                            "name": "SiteFeaturesSink"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "LookupForSiteFeatures"
+                        },
+                        {
+                            "name": "SelectSiteFeatures"
+                        }
+                    ],
+                    "script": "source(output(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> tempstage\nsource(output(\n\t\tSiteID as integer,\n\t\tTradingName as string,\n\t\tLocation as string,\n\t\tAddress as string,\n\t\tPhone as string,\n\t\tLatitude as double,\n\t\tLongitude as double,\n\t\tFullAddress as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> DataMartSite\ntempstage, DataMartSite lookup(tempstage@address == DataMartSite@Address\n\t&& {trading-name} == TradingName,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupForSiteFeatures\nLookupForSiteFeatures select(mapColumn(\n\t\tSiteFeatures = {site-features},\n\t\tSiteID\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSiteFeatures\nSelectSiteFeatures sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tSiteFeatureID as integer,\n\t\tSiteFeatures as string,\n\t\tSiteID as integer\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tSiteFeatures,\n\t\tSiteID\n\t)) ~> SiteFeaturesSink"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/DataMart')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_Site')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_SiteFeatures')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/Dimension tables Brand and Site')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "tempstage"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_dwBrand",
+                                "type": "DatasetReference"
+                            },
+                            "name": "BrandTableSink"
+                        },
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_Site",
+                                "type": "DatasetReference"
+                            },
+                            "name": "SiteTableSink"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "SelectBrandName"
+                        },
+                        {
+                            "name": "ComputedFullAddress"
+                        },
+                        {
+                            "name": "SelectSite"
+                        }
+                    ],
+                    "script": "source(output(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> tempstage\ntempstage select(mapColumn(\n\t\tBrandName = brand\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectBrandName\ntempstage derive(FullAddress = concat(address, ', ', location)) ~> ComputedFullAddress\nComputedFullAddress select(mapColumn(\n\t\tAddress = address,\n\t\tLatitude = latitude,\n\t\tLocation = location,\n\t\tLongitude = longitude,\n\t\tPhone = phone,\n\t\tTradingName = {trading-name},\n\t\tFullAddress\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectSite\nSelectBrandName sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tBrandID as integer,\n\t\tBrandName as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> BrandTableSink\nSelectSite sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tSiteID as integer,\n\t\tTradingName as string,\n\t\tLocation as string,\n\t\tAddress as string,\n\t\tPhone as string,\n\t\tLatitude as double,\n\t\tLongitude as double,\n\t\tFullAddress as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> SiteTableSink"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/DataMart')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_dwBrand')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_Site')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/Fact table FuelPrice')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_Site",
+                                "type": "DatasetReference"
+                            },
+                            "name": "Site"
+                        },
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "tempstage"
+                        },
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_dwBrand",
+                                "type": "DatasetReference"
+                            },
+                            "name": "Brand"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart_FuelPrice",
+                                "type": "DatasetReference"
+                            },
+                            "name": "FuelPriceSink"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "LookupSiteID"
+                        },
+                        {
+                            "name": "LookupBrandID"
+                        },
+                        {
+                            "name": "DeriveDateID"
+                        },
+                        {
+                            "name": "SelectForFactTable"
+                        }
+                    ],
+                    "script": "source(output(\n\t\tSiteID as integer,\n\t\tTradingName as string,\n\t\tLocation as string,\n\t\tAddress as string,\n\t\tPhone as string,\n\t\tLatitude as double,\n\t\tLongitude as double,\n\t\tFullAddress as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> Site\nsource(output(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> tempstage\nsource(output(\n\t\tBrandID as integer,\n\t\tBrandName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tisolationLevel: 'READ_UNCOMMITTED',\n\tformat: 'table') ~> Brand\nSite, tempstage lookup(TradingName == {trading-name},\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupSiteID\nLookupSiteID, Brand lookup(brand == BrandName,\n\tmultiple: false,\n\tpickup: 'any',\n\tbroadcast: 'auto')~> LookupBrandID\nLookupBrandID derive(date = toInteger(translate(toString(date, 'yyyy-MM-dd'), '-', ''))) ~> DeriveDateID\nDeriveDateID select(mapColumn(\n\t\tSiteID,\n\t\tBrandID,\n\t\tDateID = date,\n\t\tprice\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> SelectForFactTable\nSelectForFactTable sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tFuelPriceID as integer,\n\t\tBrandID as integer,\n\t\tSiteID as integer,\n\t\tDateID as integer,\n\t\tPrice as integer,\n\t\tDateCreated as timestamp,\n\t\tDateModified as timestamp\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tBrandID,\n\t\tSiteID,\n\t\tDateID,\n\t\tPrice = price\n\t)) ~> FuelPriceSink"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/DataMart_Site')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_dwBrand')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart_FuelPrice')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/datalakestore')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobStorage",
+                "typeProperties": {
+                    "connectionString": "[parameters('datalakestore_connectionString')]",
+                    "accountKey": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "[concat('AzureKeyVault_', variables('keyvaultname'))]",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "dataLakeStorageAccountKey"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureKeyVault_', variables('keyvaultname'))]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/FuelWatchRSSHttpServer')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[parameters('FuelWatchRSSHttpServer_properties_typeProperties_url')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/DataMart')]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureSqlDatabase",
+                "typeProperties": {
+                    "connectionString": "[parameters('DataMart_connectionString')]",
+                    "password": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "[concat('AzureKeyVault_', variables('keyvaultname'))]",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "sqladmin"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/AzureKeyVault_', variables('keyvaultname'))]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/AzureKeyVault_', variables('keyvaultname'))]",
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureKeyVault",
+                "typeProperties": {
+                    "baseUrl": "[concat('https://', variables('keyvaultname'), '.vault.azure.net/')]"
+                }
+            },
+            "dependsOn": []
+        }
+    ]
+}
