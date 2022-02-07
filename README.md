@@ -9,14 +9,14 @@ Source data from FuelWatch RSS feed (Western Australian Government) is transform
 4. Separate schemas for tmp and dw to host temporary data and curated data.
 
 ## The solution
-The [infra build template](https://github.com/austindev4/test/blob/main/infra%20build%20template.json) deploys following resources in Azure Australia East region:
+This repository consists of Azure ARM templates. The [infra build template](https://github.com/austindev4/test/blob/main/infra%20build%20template.json) deploys following resources in Azure Australia East region:
 1. Database server
 2. Database (DataMart)
 3. Data factory
 4. Storage account
 5. Vault
 
-The [data factory flows template](https://github.com/austindev4/test/blob/main/data%20factory%20flows%20template.json) deploys flows to ADF that transform the raw feed into dimension and fact table for modelling.
+The [data factory flows template](https://github.com/austindev4/test/blob/main/data%20factory%20flows%20template.json) deploys flows to ADF that transform the raw feed into dimension and fact tables suitable for modelling.
 Pass below parameters during datafactory flows ARM deployment.
 1. Connection string for storage account
 2. Connection string for DataMart

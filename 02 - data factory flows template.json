@@ -1059,6 +1059,614 @@
                 }
             },
             "dependsOn": []
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/copy rss to parquet blob')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "Copy data1",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "XmlSource",
+                                "storeSettings": {
+                                    "type": "HttpReadSettings",
+                                    "requestMethod": "GET"
+                                },
+                                "formatSettings": {
+                                    "type": "XmlReadSettings",
+                                    "validationMode": "none",
+                                    "namespaces": true
+                                }
+                            },
+                            "sink": {
+                                "type": "ParquetSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageWriteSettings"
+                                },
+                                "formatSettings": {
+                                    "type": "ParquetWriteSettings"
+                                }
+                            },
+                            "enableStaging": false,
+                            "translator": {
+                                "type": "TabularTranslator",
+                                "mappings": [
+                                    {
+                                        "source": {
+                                            "path": "[['title']"
+                                        },
+                                        "sink": {
+                                            "name": "title"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['description']"
+                                        },
+                                        "sink": {
+                                            "name": "description"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['brand']"
+                                        },
+                                        "sink": {
+                                            "name": "brand"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['date']"
+                                        },
+                                        "sink": {
+                                            "name": "date"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['price']"
+                                        },
+                                        "sink": {
+                                            "name": "price"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['trading-name']"
+                                        },
+                                        "sink": {
+                                            "name": "trading-name"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['location']"
+                                        },
+                                        "sink": {
+                                            "name": "location"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['address']"
+                                        },
+                                        "sink": {
+                                            "name": "address"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['phone']"
+                                        },
+                                        "sink": {
+                                            "name": "phone"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['latitude']"
+                                        },
+                                        "sink": {
+                                            "name": "latitude"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['longitude']"
+                                        },
+                                        "sink": {
+                                            "name": "longitude"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['site-features']"
+                                        },
+                                        "sink": {
+                                            "name": "site-features"
+                                        }
+                                    }
+                                ],
+                                "collectionReference": "$['rss']['channel']['item']"
+                            }
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "FuelWatchRSSHttpServer",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "ParquetSink",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {},
+                    "cancelAfter": {}
+                },
+                "annotations": []
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/FuelWatchRSSHttpServer')]",
+                "[concat(variables('factoryId'), '/datasets/ParquetSink')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/ParquetSink')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "datalakestore",
+                    "type": "LinkedServiceReference"
+                },
+                "annotations": [],
+                "type": "Parquet",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "fileName": "feed.parquet",
+                        "folderPath": "Raw/FuelWatch",
+                        "container": "datalakestore"
+                    },
+                    "compressionCodec": "snappy"
+                },
+                "schema": [
+                    {
+                        "name": "rss_channel_item'][0]['title",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "rss_channel_item'][0]['description",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "brand",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "date",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "price",
+                        "type": "DOUBLE"
+                    },
+                    {
+                        "name": "trading-name",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "location",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "address",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "phone",
+                        "type": "UTF8"
+                    },
+                    {
+                        "name": "latitude",
+                        "type": "DOUBLE"
+                    },
+                    {
+                        "name": "longitude",
+                        "type": "DOUBLE"
+                    },
+                    {
+                        "name": "site-features",
+                        "type": "UTF8"
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/linkedServices/datalakestore')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/dataflow rss to parquet')]",
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "ParquetSink",
+                                "type": "DatasetReference"
+                            },
+                            "name": "parquetblob"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "DataMart",
+                                "type": "DatasetReference"
+                            },
+                            "name": "tempstageSqlSink"
+                        }
+                    ],
+                    "transformations": [],
+                    "script": "source(output(\n\t\ttitle as string,\n\t\tdescription as string,\n\t\tbrand as string,\n\t\tdate as string,\n\t\tprice as double,\n\t\t{trading-name} as string,\n\t\tlocation as string,\n\t\taddress as string,\n\t\tphone as string,\n\t\tlatitude as double,\n\t\tlongitude as double,\n\t\t{site-features} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'parquet') ~> parquetblob\nparquetblob sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\taddress as string,\n\t\tbrand as string,\n\t\tdate as date,\n\t\tdescription as string,\n\t\tlatitude as double,\n\t\tlocation as string,\n\t\tlongitude as double,\n\t\tphone as string,\n\t\tprice as double,\n\t\t{site-features} as string,\n\t\ttitle as string,\n\t\t{trading-name} as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError') ~> tempstageSqlSink"
+                }
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/datasets/ParquetSink')]",
+                "[concat(variables('factoryId'), '/datasets/DataMart')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/e2e w parquet')]",
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "copy to DataMart",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Copy parquet to blob",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "dataflow rss to parquet",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "parquetblob": {},
+                                    "tempstageSqlSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate dimension tables Brand and Site",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "copy to DataMart",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Dimension tables Brand and Site",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "tempstage": {},
+                                    "BrandTableSink": {},
+                                    "SiteTableSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate dimension tables SiteFeatures",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Populate dimension tables Brand and Site",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Dimension table SiteFeatures",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "tempstage": {},
+                                    "DataMartSite": {},
+                                    "SiteFeaturesSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Populate fact table",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "Populate dimension tables SiteFeatures",
+                                "dependencyConditions": [
+                                    "Completed"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "1.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "Fact table FuelPrice",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "Site": {},
+                                    "tempstage": {},
+                                    "Brand": {},
+                                    "FuelPriceSink": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            },
+                            "traceLevel": "Fine"
+                        }
+                    },
+                    {
+                        "name": "Copy parquet to blob",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "XmlSource",
+                                "storeSettings": {
+                                    "type": "HttpReadSettings",
+                                    "requestMethod": "GET"
+                                },
+                                "formatSettings": {
+                                    "type": "XmlReadSettings",
+                                    "validationMode": "none",
+                                    "namespaces": true
+                                }
+                            },
+                            "sink": {
+                                "type": "ParquetSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageWriteSettings"
+                                },
+                                "formatSettings": {
+                                    "type": "ParquetWriteSettings"
+                                }
+                            },
+                            "enableStaging": false,
+                            "translator": {
+                                "type": "TabularTranslator",
+                                "mappings": [
+                                    {
+                                        "source": {
+                                            "path": "[['title']"
+                                        },
+                                        "sink": {
+                                            "name": "title"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['description']"
+                                        },
+                                        "sink": {
+                                            "name": "description"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['brand']"
+                                        },
+                                        "sink": {
+                                            "name": "brand"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['date']"
+                                        },
+                                        "sink": {
+                                            "name": "date"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['price']"
+                                        },
+                                        "sink": {
+                                            "name": "price"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['trading-name']"
+                                        },
+                                        "sink": {
+                                            "name": "trading-name"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['location']"
+                                        },
+                                        "sink": {
+                                            "name": "location"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['address']"
+                                        },
+                                        "sink": {
+                                            "name": "address"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['phone']"
+                                        },
+                                        "sink": {
+                                            "name": "phone"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['latitude']"
+                                        },
+                                        "sink": {
+                                            "name": "latitude"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['longitude']"
+                                        },
+                                        "sink": {
+                                            "name": "longitude"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['site-features']"
+                                        },
+                                        "sink": {
+                                            "name": "site-features"
+                                        }
+                                    }
+                                ],
+                                "collectionReference": "$['rss']['channel']['item']"
+                            }
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "FuelWatchRSSHttpServer",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "ParquetSink",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    }
+                ],
+                "policy": {
+                    "elapsedTimeMetric": {},
+                    "cancelAfter": {}
+                },
+                "annotations": [],
+                "lastPublishTime": "2022-02-07T07:10:54Z"
+            },
+            "dependsOn": [
+                "[concat(variables('factoryId'), '/dataflows/dataflow rss to parquet')]",
+                "[concat(variables('factoryId'), '/dataflows/Dimension tables Brand and Site')]",
+                "[concat(variables('factoryId'), '/dataflows/Dimension table SiteFeatures')]",
+                "[concat(variables('factoryId'), '/dataflows/Fact table FuelPrice')]",
+                "[concat(variables('factoryId'), '/datasets/FuelWatchRSSHttpServer')]",
+                "[concat(variables('factoryId'), '/datasets/ParquetSink')]"
+            ]
         }
     ]
 }
