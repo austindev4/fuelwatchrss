@@ -21,12 +21,12 @@ Pass below parameters during datafactory flows ARM deployment.
 1. Connection string for storage account
 2. Connection string for DataMart
 
-## Pending
-Some tasks pending automation as below:-
-Pre build:-
+## Manual tasks for deployment
+#### Some tasks with potential to automate in next iteration as below
+Pre build tasks:-
 1. Create resource group in Australia East region.
 
-Post build steps:-
+Post build tasks:-
 1. Add secret for sqladmin to vault 
 2. Obtain and add secret dataLakeStorageAccountKey from storage account to vault.
 2. Add access policy (with secret get+list) in key vault for data factory principal id.
