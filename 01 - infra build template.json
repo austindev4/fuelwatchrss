@@ -29,7 +29,10 @@
             "minLength": 1
         },
         "datamartserverAdminLoginPassword": {
-            "type": "securestring"
+            "type": "securestring",
+			"metadata": {
+				"description": "Suggestion for nonprod Abcdef1234."
+			}
         },
         "sqlDBName": {
             "type": "string",
@@ -40,8 +43,18 @@
         },
         "tenant": {
             "type": "string",
+			"metadata": {
+				"description": "TenantID will auto-populate from subscription().tenantId."
+			},
             "defaultValue": "[subscription().tenantId]"
         },
+		"objectId": {
+			"type": "string",
+			"metadata": {
+				"description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets or in portal https://docs.microsoft.com/en-us/azure/marketplace/find-tenant-object-id#find-user-object-id. Else try  https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview"
+			},
+			"defaultValue": ""
+		},
         "networkAcls": {
             "type": "object",
             "defaultValue": {
@@ -157,7 +170,7 @@
                 "accessPolicies": [
                     {
                         "tenantId": "[parameters('tenant')]",
-                        "objectId": "1b244ee9-35c5-46a8-b54b-9defef1c9dff",
+                        "objectId": "[parameters('objectId')]",
                         "permissions": {
                             "keys": [
                                 "Get",
