@@ -1,0 +1,138 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "metadata": {
+        "_generator": {
+            "name": "bicep",
+            "version": "0.4.1124.51302",
+            "templateHash": "11901795112433599647"
+        }
+    },
+    "parameters": {
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Specifies the name of the Azure Storage account."
+            }
+        },
+        "containerName": {
+            "type": "string",
+            "defaultValue": "datalakestore",
+            "metadata": {
+                "description": "Specifies the name of the blob container."
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Specifies the location in which the Azure Storage resources should be deployed."
+            }
+        },
+        "datamartserverAdminLogin": {
+            "type": "string",
+            "minLength": 1
+        },
+        "datamartserverAdminLoginPassword": {
+            "type": "securestring"
+        },
+        "sqlDBName": {
+            "type": "string",
+            "defaultValue": "DataMart",
+            "metadata": {
+                "description": "The name of the SQL Database."
+            }
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2021-06-01",
+            "name": "[parameters('storageAccountName')]",
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "accessTier": "Hot",
+                "isHnsEnabled": true
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "apiVersion": "2021-06-01",
+            "name": "[format('{0}/default/{1}', parameters('storageAccountName'), parameters('containerName'))]",
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+            ]
+        },
+        {
+            "name": "[variables('datamartserverName')]",
+            "type": "Microsoft.Sql/servers",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2021-02-01-preview",
+            "dependsOn": [],
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "properties": {
+                "administratorLogin": "[parameters('datamartserverAdminLogin')]",
+                "administratorLoginPassword": "[parameters('datamartserverAdminLoginPassword')]"
+            },
+            "resources": [
+                {
+                    "name": "AllowAllWindowsAzureIps",
+                    "type": "firewallrules",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2021-02-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('datamartserverName'))]"
+                    ],
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[format('{0}/{1}', variables('datamartserverName'), parameters('sqlDBName'))]",
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2021-02-01-preview",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "Department ": "Finance",
+                "Environment ": "Development"
+            },
+            "sku": {
+                "name": "S0",
+                "tier": "Standard"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Sql/servers/', variables('datamartserverName'))]"
+            ],
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "maxSizeBytes": 21474836480,
+                "zoneRedundant": false,
+                "readScale": "Disabled",
+                "highAvailabilityReplicaCount": 0,
+                "requestedBackupStorageRedundancy": "Geo",
+                "isLedgerOn": false
+            }
+        }
+    ],
+    "variables": {
+        "datamartserverName": "[concat('datamartserver', uniqueString(resourceGroup().id))]"
+    }
+}
