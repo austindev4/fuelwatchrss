@@ -1,27 +1,27 @@
 # fuelwatchrss
 Source data from FuelWatch RSS feed (Western Australian Government) is transformed into dimension and fact tables.
 
-## The ask:
+## The ask
 1. All resources should be deployed in Australia and with approriate tags.
 2. Container in storage account (with Hierarchical namespace Enabled) to be named datalakestore.
 3. Use the name dataLakeStorageAccountKey or similar as the secret name for datalakestore access key.
 3. SQL PaaS database called DataMart of 20GB size.
 4. Separate schemas for tmp and dw to host temporary data and curated data.
 
-# The solution
-The infra build template deploys following resources in Australia East region:
+## The solution
+The [infra build template](https://github.com/austindev4/test/blob/main/infra%20build%20template.json) deploys following resources in Azure Australia East region:
 1. Database server
 2. Database (DataMart)
 3. Data factory
 4. Storage account
 5. Vault
 
-The data factory flows template deploys flows to ADF that transform the raw feed into dimension and fact table for modelling.
+The [data factory flows template](https://github.com/austindev4/test/blob/main/data%20factory%20flows%20template.json) deploys flows to ADF that transform the raw feed into dimension and fact table for modelling.
 Pass below parameters during datafactory flows ARM deployment.
 1. Connection string for storage account
 2. Connection string for DataMart
 
-# Pending
+## Pending
 Some tasks pending automation as below:-
 Pre build:-
 1. Create resource group with any name.
@@ -32,5 +32,5 @@ Post build steps:-
 2. Add access policy (with secret get+list) in key vault for data factory principal id.
 3. Create schemas for datamart using sql_artifacts.txt
 
-# Final state
+## Final state
 Trigger the e2e pipeline on ADF. Flow is RSS->Blob->SQL.
