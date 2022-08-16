@@ -1,13 +1,6 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "metadata": {
-        "_generator": {
-            "name": "bicep",
-            "version": "0.4.1124.51302",
-            "templateHash": "11901795112433599647"
-        }
-    },
     "parameters": {
         "containerName": {
             "type": "string",
@@ -51,7 +44,7 @@
 		"objectId": {
 			"type": "string",
 			"metadata": {
-				"description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets or in portal https://docs.microsoft.com/en-us/azure/marketplace/find-tenant-object-id#find-user-object-id. Else try  https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview"
+				"description": "Required for creating access policy. Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets or in portal https://docs.microsoft.com/en-us/azure/marketplace/find-tenant-object-id#find-user-object-id. Else try  https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview"
 			},
 			"defaultValue": ""
 		},
@@ -99,9 +92,8 @@
         {
             "name": "[variables('datamartserverName')]",
             "type": "Microsoft.Sql/servers",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "apiVersion": "2021-02-01-preview",
-            "dependsOn": [],
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
@@ -114,7 +106,7 @@
                 {
                     "name": "AllowAllWindowsAzureIps",
                     "type": "firewallrules",
-                    "location": "[resourceGroup().location]",
+                    "location": "[parameters('location')]",
                     "apiVersion": "2021-02-01-preview",
                     "dependsOn": [
                         "[concat('Microsoft.Sql/servers/', variables('datamartserverName'))]"
@@ -124,13 +116,16 @@
                         "endIpAddress": "0.0.0.0"
                     }
                 }
-            ]
+            ],
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+                ]
         },
         {
             "name": "[format('{0}/{1}', variables('datamartserverName'), parameters('sqlDBName'))]",
             "type": "Microsoft.Sql/servers/databases",
             "apiVersion": "2021-02-01-preview",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
@@ -156,7 +151,7 @@
             "name": "[variables('keyvaultname')]",
             "type": "Microsoft.KeyVault/vaults",
             "apiVersion": "2019-09-01",
-            "location": "[resourceGroup().location]",
+            "location": "[parameters('location')]",
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
@@ -223,8 +218,8 @@
             "type": "Microsoft.DataFactory/factories",
             "apiVersion": "2018-06-01",
             "properties": {},
-            "dependsOn": [],
-            "location": "australiaeast",
+            "dependsOn": ["[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"],
+            "location": "[parameters('location')]",
             "tags": {
                 "Department ": "Finance",
                 "Environment ": "Development"
