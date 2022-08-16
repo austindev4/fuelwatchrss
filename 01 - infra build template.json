@@ -214,6 +214,17 @@
             }
         },
         {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2021-11-01-preview",
+            "name": "[format('{0}/{1}', variables('keyvaultname'), parameters('datamartserverAdminLogin'))]",
+            "properties": {
+                "value": "[parameters('datamartserverAdminLoginPassword')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultname'))]"
+            ]
+        },
+        {
             "name": "[variables('datafactoryname')]",
             "type": "Microsoft.DataFactory/factories",
             "apiVersion": "2018-06-01",
