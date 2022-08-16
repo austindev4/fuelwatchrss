@@ -11,7 +11,7 @@
 			"location": {
 				"type": "AzureBlobStorageLocation",
 				"fileName": "feed.parquet",
-				"folderPath": "@concat('Raw/FuelWatch/',formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmmss'))",
+				"folderPath": "@concat('Raw/FuelWatch/',formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-dd'))",
 				"container": "datalakestore"
 			},
 			"compressionCodec": "snappy"
