@@ -156,6 +156,7 @@
                 "Department ": "Finance",
                 "Environment ": "Development"
             },
+            "dependsOn": ["[resourceId('Microsoft.DataFactory/factories', variables('datafactoryname'))]"],
             "properties": {
                 "enabledForDeployment": true,
                 "enabledForTemplateDeployment": true,
@@ -163,6 +164,18 @@
                 "networkAcls": "[parameters('networkAcls')]",
                 "tenantId": "[parameters('tenant')]",
                 "accessPolicies": [
+                    {
+                        "tenantId": "[parameters('tenant')]",
+                        "objectId": "[reference(resourceId('Microsoft.DataFactory/factories', variables('datafactoryname')),'2018-06-01', 'full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": []
+                        }
+                    },
                     {
                         "tenantId": "[parameters('tenant')]",
                         "objectId": "[parameters('objectId')]",
@@ -229,7 +242,7 @@
             "type": "Microsoft.DataFactory/factories",
             "apiVersion": "2018-06-01",
             "properties": {},
-            "dependsOn": ["[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"],
+            "dependsOn": [],
             "location": "[parameters('location')]",
             "tags": {
                 "Department ": "Finance",
@@ -245,5 +258,6 @@
         "keyvaultname": "[concat('vault', uniqueString(resourceGroup().id))]",
         "datastorename": "[concat('datastore', uniqueString(resourceGroup().id))]",
         "datafactoryname": "[concat('factory', uniqueString(resourceGroup().id))]"
+        //"uniqueResourceNameBase": "[uniqueString(resourceGroup().id, parameters('location'), deployment().name)]"
     }
 }
