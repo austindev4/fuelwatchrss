@@ -1,0 +1,246 @@
+{
+	"name": "source",
+	"properties": {
+		"activities": [
+			{
+				"name": "Activity 1 - Import source data",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "XmlSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET"
+						},
+						"formatSettings": {
+							"type": "XmlReadSettings",
+							"validationMode": "none",
+							"namespaces": true
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"path": "$['rss']['channel']['title']"
+								},
+								"sink": {
+									"name": "rss_channel_title"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['ttl']"
+								},
+								"sink": {
+									"name": "ttl"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['link']"
+								},
+								"sink": {
+									"name": "rss_channel_link"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['description']"
+								},
+								"sink": {
+									"name": "rss_channel_description"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['language']"
+								},
+								"sink": {
+									"name": "language"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['copyright']"
+								},
+								"sink": {
+									"name": "copyright"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['lastBuildDate']"
+								},
+								"sink": {
+									"name": "lastBuildDate"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['image']['url']"
+								},
+								"sink": {
+									"name": "url"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['image']['title']"
+								},
+								"sink": {
+									"name": "rss_channel_image_title"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['image']['link']"
+								},
+								"sink": {
+									"name": "rss_channel_image_link"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['title']"
+								},
+								"sink": {
+									"name": "rss_channel_item'][0]['title"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['description']"
+								},
+								"sink": {
+									"name": "rss_channel_item'][0]['description"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['brand']"
+								},
+								"sink": {
+									"name": "brand"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['date']"
+								},
+								"sink": {
+									"name": "date"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['price']"
+								},
+								"sink": {
+									"name": "price"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['trading-name']"
+								},
+								"sink": {
+									"name": "trading-name"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['location']"
+								},
+								"sink": {
+									"name": "location"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['address']"
+								},
+								"sink": {
+									"name": "address"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['phone']"
+								},
+								"sink": {
+									"name": "phone"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['latitude']"
+								},
+								"sink": {
+									"name": "latitude"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['longitude']"
+								},
+								"sink": {
+									"name": "longitude"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['channel']['item'][0]['site-features']"
+								},
+								"sink": {
+									"name": "site-features"
+								}
+							},
+							{
+								"source": {
+									"path": "$['rss']['@version']"
+								},
+								"sink": {
+									"name": "@@version"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ImportRssXml",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "feedparquet",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": []
+	}
+}

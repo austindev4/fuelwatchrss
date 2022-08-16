@@ -1,0 +1,21 @@
+{
+	"name": "feedparquet",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "datalakestore",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "feed.parquet",
+				"folderPath": "concat('Raw/FuelWatch/',formatDateTime(convertTimeZone(utcnow(),'UTC','Eastern Standard Time'),'yyyy-MM-ddTHHmmss'))",
+				"container": "datalakestore"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "ImportRssXml",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "fuelwatch",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Xml",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation"
+			}
+		}
+	}
+}
