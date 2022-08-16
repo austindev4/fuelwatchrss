@@ -1,0 +1,12 @@
+{
+	"name": "fuelwatch",
+	"properties": {
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "http://www.fuelwatch.wa.gov.au/fuelwatch/fuelWatchRSS",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}
