@@ -270,6 +270,7 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
+						"preCopyScript": "create schema if not exists tempstage;\ngo\ncreate table if not exists tempstage.FuelPrices;",
 						"writeBehavior": "insert",
 						"sqlWriterUseTableLock": false,
 						"tableOption": "autoCreate",
