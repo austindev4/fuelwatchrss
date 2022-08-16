@@ -40,14 +40,14 @@
 				"description": "TenantID will auto-populate from subscription().tenantId."
 			},
             "defaultValue": "[subscription().tenantId]"
-        },
-		"objectId": {
-			"type": "string",
-			"metadata": {
-				"description": "Required for creating access policy. Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets or in portal https://docs.microsoft.com/en-us/azure/marketplace/find-tenant-object-id#find-user-object-id. Else try  https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview"
-			},
-			"defaultValue": ""
-		},
+        }
+		// "objectId": {
+		// 	"type": "string",
+		// 	"metadata": {
+		// 		"description": "Required for creating access policy. Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets or in portal https://docs.microsoft.com/en-us/azure/marketplace/find-tenant-object-id#find-user-object-id. Else try  https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview"
+		// 	},
+		// 	"defaultValue": ""
+		// },
         "networkAcls": {
             "type": "object",
             "defaultValue": {
@@ -175,50 +175,50 @@
                             ],
                             "certificates": []
                         }
-                    },
-                    {
-                        "tenantId": "[parameters('tenant')]",
-                        "objectId": "[parameters('objectId')]",
-                        "permissions": {
-                            "keys": [
-                                "Get",
-                                "List",
-                                "Update",
-                                "Create",
-                                "Import",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore"
-                            ],
-                            "secrets": [
-                                "Get",
-                                "List",
-                                "Set",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore"
-                            ],
-                            "certificates": [
-                                "Get",
-                                "List",
-                                "Update",
-                                "Create",
-                                "Import",
-                                "Delete",
-                                "Recover",
-                                "Backup",
-                                "Restore",
-                                "ManageContacts",
-                                "ManageIssuers",
-                                "GetIssuers",
-                                "ListIssuers",
-                                "SetIssuers",
-                                "DeleteIssuers"
-                            ]
-                        }
                     }
+                    // {
+                    //     "tenantId": "[parameters('tenant')]",
+                    //     "objectId": "[parameters('objectId')]",
+                    //     "permissions": {
+                    //         "keys": [
+                    //             "Get",
+                    //             "List",
+                    //             "Update",
+                    //             "Create",
+                    //             "Import",
+                    //             "Delete",
+                    //             "Recover",
+                    //             "Backup",
+                    //             "Restore"
+                    //         ],
+                    //         "secrets": [
+                    //             "Get",
+                    //             "List",
+                    //             "Set",
+                    //             "Delete",
+                    //             "Recover",
+                    //             "Backup",
+                    //             "Restore"
+                    //         ],
+                    //         "certificates": [
+                    //             "Get",
+                    //             "List",
+                    //             "Update",
+                    //             "Create",
+                    //             "Import",
+                    //             "Delete",
+                    //             "Recover",
+                    //             "Backup",
+                    //             "Restore",
+                    //             "ManageContacts",
+                    //             "ManageIssuers",
+                    //             "GetIssuers",
+                    //             "ListIssuers",
+                    //             "SetIssuers",
+                    //             "DeleteIssuers"
+                    //         ]
+                    //     }
+                    // }
                 ],
                 "sku": {
                     "name": "standard",
